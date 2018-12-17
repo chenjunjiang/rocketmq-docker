@@ -1,0 +1,144 @@
+version: '3.2'
+services:
+  rmqnamesrv1:
+    environment:
+      JAVA_OPT_EXT: -server -Xms128m -Xmx256m -Xmn128m
+    image: apache/rocketmq-namesrv:4.3.0
+    container_name: rmqnamesrv1
+    ports:
+      - 9876:9876
+    volumes:
+      - type: bind
+        source: d:/opt
+        target: /opt/
+  rmqnamesrv2:
+    environment:
+      JAVA_OPT_EXT: -server -Xms128m -Xmx256m -Xmn128m
+    image: apache/rocketmq-namesrv:4.3.0
+    container_name: rmqnamesrv2
+    ports:
+      - 9877:9876
+    volumes:
+      - type: bind
+        source: d:/opt
+        target: /opt/
+  broker-a:
+    environment:
+      JAVA_OPT_EXT: -server -Xms128m -Xmx256m -Xmn128m
+      NAMESRV_ADDR: rmqnamesrv1:9876;rmqnamesrv2:9877
+      broker: broker-a
+    image: apache/rocketmq-broker:4.3.0
+    container_name: broker-a
+    ports:
+      - 10909:10909
+      - 10911:10911
+      - 10912:10913
+    volumes:
+      - type: bind
+        source: d:/opt
+        target: /opt/
+    depends_on:
+      - rmqnamesrv1
+      - rmqnamesrv2
+    links:
+      - rmqnamesrv1
+      - rmqnamesrv2
+    command:
+      - /bin/bash
+      - -c
+      - | 
+        cd ${ROCKETMQ_HOME}/bin
+        export JAVA_OPT=" -Duser.home=/opt"
+        sh mqbroker -c ../conf/broker-a.properties
+  broker-a-s:
+    environment:
+      JAVA_OPT_EXT: -server -Xms128m -Xmx256m -Xmn128m
+      NAMESRV_ADDR: rmqnamesrv1:9876;rmqnamesrv2:9877
+      broker: broker-a-s
+    image: apache/rocketmq-broker:4.3.0
+    container_name: broker-a-s
+    ports:
+      - 11009:11009
+      - 11011:11011
+      - 11012:11012
+    volumes:
+      - type: bind
+        source: d:/opt
+        target: /opt/
+    depends_on:
+      - broker-a
+    links:
+      - rmqnamesrv1
+      - rmqnamesrv2
+    command:
+      - /bin/bash
+      - -c
+      - |
+        cd ${ROCKETMQ_HOME}/bin 
+        export JAVA_OPT=" -Duser.home=/opt"
+        sh mqbroker -c ../conf/broker-a-s.properties
+  broker-b:
+    environment:
+      JAVA_OPT_EXT: -server -Xms128m -Xmx256m -Xmn128m
+      NAMESRV_ADDR: rmqnamesrv1:9876;rmqnamesrv2:9877
+      broker: broker-b
+    image: apache/rocketmq-broker:4.3.0
+    container_name: broker-b
+    ports:
+      - 11909:11909
+      - 11911:11911
+      - 11912:11912
+    volumes:
+      - type: bind
+        source: d:/opt
+        target: /opt/
+    depends_on:
+      - rmqnamesrv1
+      - rmqnamesrv2
+    links:
+      - rmqnamesrv1
+      - rmqnamesrv2
+    command: 
+      - /bin/bash
+      - -c
+      - |
+        cd ${ROCKETMQ_HOME}/bin \
+        export JAVA_OPT=" -Duser.home=/opt" \
+        sh mqbroker -c ../conf/broker-b.properties
+  broker-b-s:
+    environment:
+      JAVA_OPT_EXT: -server -Xms128m -Xmx256m -Xmn128m
+      NAMESRV_ADDR: rmqnamesrv1:9876;rmqnamesrv2:9877
+      broker: broker-b-s
+    image: apache/rocketmq-broker:4.3.0
+    container_name: broker-b-s
+    ports:
+      - 12009:12009
+      - 12011:12011
+      - 12012:12012
+    volumes:
+      - type: bind
+        source: d:/opt
+        target: /opt/
+    depends_on:
+      - broker-b
+    links:
+      - rmqnamesrv1
+      - rmqnamesrv2
+    command: 
+      - /bin/bash
+      - -c
+      - |
+        cd ${ROCKETMQ_HOME}/bin \
+        export JAVA_OPT=" -Duser.home=/opt" \
+        sh mqbroker -c ../conf/broker-b-s.properties
+  console:
+    environment:
+      JAVA_OPTS: -Drocketmq.namesrv.addr=rmqnamesrv1:9876;rmqnamesrv2:9877 -Dcom.rocketmq.sendMessageWithVIPChannel=false
+    image: 708eb253d75a
+    container_name: console
+    ports:
+      - 8080:8080
+    depends_on:
+      - broker-a
+      - broker-b
